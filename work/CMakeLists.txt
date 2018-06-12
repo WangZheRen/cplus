@@ -1,27 +1,9 @@
 cmake_minimum_required(VERSION 3.11.2)
-
 project(work)
+add_custom_target(cmake-build-debug)
 
 message(STATUS "CMAKE_CXX_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}")
 
-message(STATUS "start load boost ========================================")
-message(STATUS "comake_command=${CMAKE_SOURCE_DIR}")
-# BOOST
-## 设置个变量控制
-SET(BOOST_MIN_VERSION "1.67.0")
-## 动态查找
-FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} REQUIRED)
-if(NOT Boost_FOUND)
-    message(FATAL_ERROR "Fatal error:Boost (version >=${BOOST_MIN_VERSION}) required.\n")
-endif()
-message(STATUS "Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
-message(STATUS "Boost_LIBRARIES: ${BOOST_LIBRARY_DIRS}")
-message(STATUS "Boost_VERSION: ${Boost_VERSION}")
-## 头文件
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
-# .BOOST
-message(STATUS "end load boost ========================================")
 
 # 编译google test，会在当前目录生成libtest.a静态库
 add_subdirectory(lib/ext/googletest)
@@ -40,31 +22,27 @@ set(CMAKE_CXX_STANDARD 11)
 #set(CMAKE_CXX_COMPILER      "clang++" )         # 显示指定使用的C++编译器
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER      "g++" )         # 显示指定使用的C++编译器
-set(CMAKE_CXX_FLAGS   "-g")                     # 调试信息
-set(CMAKE_CXX_FLAGS   "-Wall")                  # 开启所有警告
-
-if (UNIX AND NOT APPLE)
-    message(STATUS "ENTRY LINUX")
-    set(CMAKE_CXX_FLAGS   "-lboost_date_time") # boost
-    set(CMAKE_CXX_FLAGS   "-lboost_regex") # boost
-elseif(UNIX AND APPLE)
-    message(STATUS "ENTRY MAC")
-    set(CMAKE_CXX_FLAGS   "-lboost_date_time-mt-d") # boost
-    set(CMAKE_CXX_FLAGS   "-lboost_regex-mt-sd") # boost
+set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -g -Wall")                     # 调试信息,开启所有警告
+if (UNIX AND APPLE)
+set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -lboost_locale-mt")
+elseif(UNIX AND NOT APPLE)
+set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -lboost_locale")
 endif()
 
 #源码目录
 FILE(GLOB_RECURSE SOURCEFILES ${PROJECT_SOURCE_DIR}/src/include/*.cpp)
 FILE(GLOB_RECURSE TEST_SOURCEFILES ${PROJECT_SOURCE_DIR}/src/test/*.cpp)
 
-add_custom_target(cmake-build-debug)
 add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_DIR}/src/main/main.cpp ${SOURCEFILES})
 add_executable(work_test ${TEST_SOURCEFILES} ${SOURCEFILES})
 
-target_link_libraries(${PROJECT_NAME} gtest ${Boost_LIBRARIES} curl)
-target_link_libraries(work_test gtest ${Boost_LIBRARIES} curl)
+target_link_libraries(${PROJECT_NAME} gtest curl)
+target_link_libraries(work_test gtest curl)
 
 
+if (UNIX AND APPLE)
 execute_process(
-     COMMAND bash -c "cp -R ${CMAKE_CURRENT_SOURCE_DIR}/data ${CMAKE_CURRENT_SOURCE_DIR}/output/bin/"
+    COMMAND bash -c "cp -R ${CMAKE_CURRENT_SOURCE_DIR}/data ${CMAKE_CURRENT_SOURCE_DIR}/output/bin/"
+    COMMAND bash -c "cp -R ${CMAKE_CURRENT_SOURCE_DIR}/conf ${CMAKE_CURRENT_SOURCE_DIR}/output/bin/"
 )
+endif()

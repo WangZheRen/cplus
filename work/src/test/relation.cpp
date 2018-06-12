@@ -5,13 +5,8 @@
 #include "common.h"
 #include "relation.h"
 #include <gtest/gtest.h>
-#include <fstream>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/foreach.hpp>
 
 using namespace work;
-using namespace boost::property_tree;
 
 void print_ptree_node(ptree node, int spaceWidth){
     BOOST_FOREACH(ptree::value_type const &v, node) {
@@ -29,6 +24,12 @@ void print_ptree_node(ptree node, int spaceWidth){
 // 人物关系规则提取
 TEST(relation, regular_extract_wrap)
 {
+
+    /*ptree root;
+    read_ini("conf/work.ini", root);
+    string url = root.get<string>("relationKg.url");
+    cout << url << endl;*/
+
     // 训练样本
     string s_train = "./data/relation/T_train";
     ifstream in(s_train.c_str());
@@ -40,7 +41,7 @@ TEST(relation, regular_extract_wrap)
         if (line.empty()){
             continue;
         }
-        //vector<RelationMap> vecRelation = relation.regular_extract(line);
+        //vector<RelationMap> vecRelation = relation.regular_extract_single_line(line);
         vector<RelationMap> vecRelation = relation.regular_extract_wrap(line);
         break;
     }
