@@ -12,8 +12,7 @@ add_subdirectory(lib/ext/googletest)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/include ${PROJECT_SOURCE_DIR}lib/ext/googletest/include)
 
 
-#库文件 : libtest.a 添加到链接路径中
-link_directories(${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/lib/ext/googletest /usr/local/opt/curl/lib/)
+link_directories(${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/lib/ext/googletest /usr/local/opt/curl/lib/ /usr/local/lib/ )
 
 #编译器相关设置
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/output/bin")
