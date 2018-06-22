@@ -9,6 +9,7 @@ using namespace work;
 
 Relation::Relation() {
     this->init_map_family();
+    this->init_map_cache_had_relation();
     this->_http = new Http();
 }
 
@@ -35,6 +36,36 @@ void Relation::init_map_family() {
         relation_name= ret[0];
         to_reverse_relation_name = ret[1];
         this->_map_family[relation_name] = to_reverse_relation_name;
+    }
+    in.close();
+}
+// 初始化已有三元关系
+void Relation::init_map_cache_had_relation() {
+    string file_path = "data/relation/tmp_relationship_modules";
+    ifstream in(file_path.c_str());
+    ASSERT_FALSE(in.fail());
+    string line, key;
+    vector<string> ret;
+    ptree root;
+    while(getline(in, line, '\n')){
+        split(ret, line, boost::is_any_of("\t"));
+        if (ret.size() != 4) {
+            continue;
+        }
+
+        try {
+            stringstream str_stream(ret[3]);
+            ptree root;
+            read_json(str_stream, root);
+
+            BOOST_FOREACH(ptree::value_type &v, root) {
+                key = ret[1] + "_" + v.second.get_child("relate_id").get_value<string>();
+                this->_map_cache_had_relation[key] = key;
+            }
+        } catch (ptree_error &e){
+            std::cout<< "error:[" << e.what() << "]lemmaName=" << ret[0] <<endl;
+        }
+        ret.clear();
     }
     in.close();
 }

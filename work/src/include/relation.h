@@ -22,6 +22,9 @@ namespace work {
         ~Relation();
         // 初始化家庭成员映射关系
         void init_map_family();
+        // 初始化已有三元关系
+        void init_map_cache_had_relation();
+
         // 补充词条ID数据（通过KG接口)
         string added_id_by_kg(const string &name);
 
