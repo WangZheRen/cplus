@@ -6,6 +6,8 @@
 #include "relation.h"
 #include <gtest/gtest.h>
 
+#include<boost/log/trivial.hpp>
+
 using namespace work;
 
 void print_ptree_node(ptree node, int spaceWidth){
@@ -22,13 +24,14 @@ void print_ptree_node(ptree node, int spaceWidth){
 }
 
 // 人物关系规则提取
-TEST(relation, regular_extract_wrap)
+TEST(relation, regular_extract)
 {
 
     /*ptree root;
     read_ini("conf/work.ini", root);
     string url = root.get<string>("relationKg.url");
     cout << url << endl;*/
+    //BOOST_LOG_TRIVIAL(trace)<<"A trace severity message";
 
     // 训练样本
     string s_train = "./data/relation/T_train";
@@ -37,12 +40,13 @@ TEST(relation, regular_extract_wrap)
     string line;
 
     Relation relation;
+    vector<RelationMap> vecRelation;
     while(getline(in, line, '\n')){
         if (line.empty()){
             continue;
         }
-        //vector<RelationMap> vecRelation = relation.regular_extract_single_line(line);
-        vector<RelationMap> vecRelation = relation.regular_extract_wrap(line);
+        vecRelation = relation.regular_extract_single_line(line);
+        vecRelation = relation.regular_extract_wrap(line);
         break;
     }
 

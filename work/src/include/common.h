@@ -8,7 +8,6 @@
 #include <map>
 #include <vector>
 #include <regex>
-
 #include <boost/version.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>

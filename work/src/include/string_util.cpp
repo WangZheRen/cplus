@@ -14,16 +14,31 @@ StringUtil::~StringUtil ()
 {
 }
 
-vector<string> StringUtil::split(string text, string sep)
+wstring StringUtil::string2wstring(const string str)
 {
-    vector<string> ret;
-    std::regex regex(sep);
+    unsigned len = str.size() * 2;// 预留字节数
+    setlocale(LC_CTYPE, "");     //必须调用此函数
+    wchar_t *p = new wchar_t[len];// 申请一段内存存放转换后的字符串
+    mbstowcs(p,str.c_str(),len);// 转换
+    std::wstring str1(p);
+    delete[] p;// 释放申请的内存
+    return str1;
+}
 
-    std::sregex_token_iterator iterator(text.begin(), text.end(), regex, -1);
-    std::sregex_token_iterator end;
 
-    for ( ; iterator != end; ++iterator) {
-        ret.push_back(*iterator);
-    }
-    return ret;
+string StringUtil::wstring2string(const wstring str)
+{
+    unsigned len = str.size() * 4;
+    setlocale(LC_CTYPE, "");
+    char *p = new char[len];
+    wcstombs(p,str.c_str(),len);
+    std::string str1(p);
+    delete[] p;
+    return str1;
+}
+
+string StringUtil::strip_tag(const string str)
+{
+    regex rgx("<[a-zA-Z/]*>");
+    return regex_replace(str, rgx, "");
 }

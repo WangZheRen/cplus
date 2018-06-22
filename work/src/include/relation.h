@@ -26,10 +26,11 @@ namespace work {
         string added_id_by_kg(const string &name);
 
         void export_file(ptree root, string L, vector<map<string, string> > v_m_P2);
-        string extract_L(ptree::value_type &node);
         // 规则提取-单行
+        string extract_single_L(ptree::value_type &node);
         vector<RelationMap> regular_extract_single_line(const string &text);
         // 规则提取-换行
+        string extract_wrap_L(ptree::value_type &node);
         vector<RelationMap> regular_extract_wrap(const string &text);
     private:
         // 家庭成员关系映射

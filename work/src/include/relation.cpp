@@ -50,7 +50,16 @@ string Relation::added_id_by_kg(const string &name) {
         stringstream str_stream(response);
         ptree root;
         read_json(str_stream, root);
+        bool is_person_type = false; //是否是人物类词条
         BOOST_FOREACH(ptree::value_type &v, root.get_child("egl_ret")) {
+            BOOST_FOREACH(ptree::value_type &v1, v.second.get_child("category")) {
+                if (v1.second.get_value<string>().find("人物", 0) != string::npos) {
+                    is_person_type = true;
+                }
+            }
+            if (!is_person_type) {
+                return "";
+            }
             return v.second.get_child("_bdbkKgId").get_value<string>();
         }
     } catch (ptree_error &e){
@@ -61,6 +70,42 @@ string Relation::added_id_by_kg(const string &name) {
 }
 
 // 单行规则提取
+string Relation::extract_single_L(ptree::value_type &node) {
+    string L;
+    string tag = node.second.get_child("tag").get_value<string>();
+    if (!equals(tag, "paragraph")) {
+        return L;
+    }
+
+    // 遍历数组中的元素
+    vector< wstring > splitVec;
+    wstring sep = StringUtil::string2wstring("：");
+    string text;
+    unsigned int i = 0;
+    BOOST_FOREACH (ptree::value_type& v, node.second.get_child("content")) {
+        i++;
+        if (i > 1) {
+            break;
+        }
+
+        if (equals(v.second.get_child("tag").get_value<string>(), "text")) {
+            if (text.length() > 40) {
+                break;
+            }
+            text = StringUtil::strip_tag(v.second.get_child("text").get_value<string>());
+            wstring line = StringUtil::string2wstring(text);
+            boost::split(splitVec, line, boost::is_any_of(sep));
+            if (splitVec.size() > 1) {
+                L = StringUtil::wstring2string(splitVec[0]);
+                if (this->_map_family.count(L) > 0) {
+                    return L;
+                }
+            }
+            splitVec.clear();
+        }
+    }
+    return "";
+}
 vector<RelationMap> Relation::regular_extract_single_line(const string &text) {
 
     vector<RelationMap> ret;
@@ -70,42 +115,61 @@ vector<RelationMap> Relation::regular_extract_single_line(const string &text) {
         read_json(str_stream, root);
         string P1 = root.get_child("lemmaTitle").get_value<string>();
         string L, P2;
-        BOOST_FOREACH(ptree::value_type &v1, root.get_child("contentStructured")) {
-            if (equals(v1.second.get_child("tag").get_value<string>(), "paragraph")) {
+        // 卡片提取
+        if (!root.get_child("card").empty()) {
+            BOOST_FOREACH(ptree::value_type &v1, root.get_child("card")) {
+                if (this->_map_family.count(v1.second.get_child("name").get_value<string>()) > 0) {
+                    L = v1.second.get_child("name").get_value<string>();
+                    vector<map<string, string> > v_m_P2;
+                    BOOST_FOREACH(ptree::value_type &v2, v1.second.get_child("value")) {
+                            map<string, string> m_id_name;
+                            m_id_name[""] = v2.second.get_value<string>();
+                            v_m_P2.push_back(m_id_name);
+                    }
+                    export_file(root, L, v_m_P2);
+                }
             }
-
         }
+
+        // 单行内容提取
+        L = "";
+        unsigned int i = 0;
+        BOOST_FOREACH(ptree::value_type &v, root.get_child("contentStructured")) {
+            if (equals(v.second.get_child("tag").get_value<string>(), "paragraph")) {
+                L = this->extract_single_L(v);
+                if (L.empty()) {
+                    continue;
+                }
+                i = 0;
+                vector<map<string, string> > v_m_P2;
+                BOOST_FOREACH(ptree::value_type &v1, v.second.get_child("content")) {
+                    if (i == 0) {
+                        i++;
+                        continue;
+                    }
+                    // 只保留有内链的关系人P2
+                    if (equals(v1.second.get_child("tag").get_value<string>(), "innerlink")) {
+                        map<string, string> m_id_name;
+                        m_id_name[v1.second.get_child("lemmaId").get_value<string>()] = v1.second.get_child("lemmaTitle").get_value<string>();
+                        v_m_P2.push_back(m_id_name);
+                    }
+                }
+                export_file(root, L, v_m_P2);
+            }
+        }
+
+        // 段落提取
     } catch(ptree_error & e) {
         std::cout<<e.what()<<endl;
     } catch(runtime_error& e) {
         std::cout<<e.what()<<endl;
     }
     return ret;
-    /*vector<RelationMap> ret;
-
-    vector<string> vecRole = StringUtil::split(text, "：");
-    if (vecRole.size() < 2) {
-        return ret;
-    }
-
-    vector<string> vecP2 = StringUtil::split(vecRole[1], "，|、");
-
-    for (int i = 0; i < vecP2.size(); i++) {
-        if (vecP2[i].empty()) {
-            continue;
-        }
-        RelationMap relationMap;
-        relationMap.L = vecRole[0];
-        relationMap.P2 = vecP2[i];
-        ret.push_back(relationMap);
-    }
-
-    return ret;*/
 }
 
 // 以下是换行三元关系提取相关功能=====================================
 // 获取角色
-string Relation::extract_L(ptree::value_type &node) {
+string Relation::extract_wrap_L(ptree::value_type &node) {
     string L;
     string tag = node.second.get_child("tag").get_value<string>();
     if (equals(tag, "paragraph")) {
@@ -146,11 +210,13 @@ vector<map<string, string > > extract_P2(ptree::value_type &node) {
         return ret;
     }
 
+    // 用于删除html标签正则
+    regex rgx("<[a-zA-Z/]*>");
     // 遍历数组中的元素
     BOOST_FOREACH (ptree::value_type& v, node.second.get_child("content")) {
         if (equals(v.second.get_child("tag").get_value<string>(), "innerlink")) {
             map<string, string> P2;
-            P2[v.second.get_child("lemmaId").get_value<string>()] = v.second.get_child("text").get_value<string>();
+            P2[v.second.get_child("lemmaId").get_value<string>()] = regex_replace(v.second.get_child("text").get_value<string>(), rgx, "");
             ret.push_back(P2);
         }
     }
@@ -165,8 +231,11 @@ void Relation::export_file(ptree root, string L, vector<map<string, string> > v_
         for (int i = 0, size = v_m_P2.size(); i < size; i++) {
             for (map<string, string>::iterator iter = v_m_P2[i].begin(); iter != v_m_P2[i].end(); iter++) {
                 id = iter->first;
-                if (!id.empty()) {
+                if (id.empty() || equals(id, "null")) {
                     id =  added_id_by_kg(iter->second);
+                }
+                if (id.empty()) {
+                    continue;
                 }
                 // 已有的关系就不做导出
                 key = root.get<string>("lemmaId") + "_" + id;
@@ -186,6 +255,7 @@ void Relation::export_file(ptree root, string L, vector<map<string, string> > v_
         cout << e.what() << endl;
     }
 }
+
 vector<RelationMap> Relation::regular_extract_wrap(const string &text) {
     vector<RelationMap> ret;
     if (text.empty()) {
@@ -200,7 +270,7 @@ vector<RelationMap> Relation::regular_extract_wrap(const string &text) {
         vector<map<string, string> > v_m_P2;
         BOOST_FOREACH(ptree::value_type &v, root.get_child("contentStructured")) {
            if (!equals(v.second.get_child("tag").get_value<string>(), "paragraph")) {
-               L = this->extract_L(v);
+               L = this->extract_wrap_L(v);
            } else {
                if (!L.empty()) {
                    v_m_P2 = extract_P2(v);
@@ -211,9 +281,9 @@ vector<RelationMap> Relation::regular_extract_wrap(const string &text) {
            }
         }
     } catch(ptree_error & e) {
-        std::cout<<e.what() <<endl;
+        std::cout<< "regular_extract_wrap()" << e.what() <<endl;
     } catch(runtime_error& e) {
-        std::cout<<e.what()<<endl;
+        std::cout<< "regular_extract_wrap()" << e.what() <<endl;
     }
     return ret;
 }

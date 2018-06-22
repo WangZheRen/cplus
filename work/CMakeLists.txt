@@ -22,10 +22,12 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER      "g++" )         # 显示指定使用的C++编译器
 set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -g -Wall")                     # 调试信息,开启所有警告
+
+ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
 if (UNIX AND APPLE)
-set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -lboost_locale-mt")
+set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -lboost_locale-mt -lboost_log-mt -lboost_system-mt -lboost_filesystem-mt")
 elseif(UNIX AND NOT APPLE)
-set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -lboost_locale")
+set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -lboost_locale -lboost_log")
 endif()
 
 #源码目录

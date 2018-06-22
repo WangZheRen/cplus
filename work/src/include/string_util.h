@@ -12,7 +12,9 @@ namespace work{
     public:
         StringUtil();
         ~StringUtil();
-        static vector<string> split(string text, string sep);
+        static wstring string2wstring(const string str);
+        static string wstring2string(const wstring str);
+        static string strip_tag(const string str);
     };
 }
 
