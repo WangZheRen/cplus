@@ -9,7 +9,7 @@ message(STATUS "CMAKE_CXX_COMPILER_ID=${CMAKE_CXX_COMPILER_ID}")
 add_subdirectory(lib/ext/googletest)
 
 #头文件
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/include ${PROJECT_SOURCE_DIR}lib/ext/googletest/include)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src/include ${PROJECT_SOURCE_DIR}lib/ext/googletest/include /usr/local/include)
 
 
 link_directories(${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/lib/ext/googletest /usr/local/opt/curl/lib/ /usr/local/lib/ )
@@ -25,7 +25,7 @@ set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -g -Wall")                     # 调�
 
 ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
 if (UNIX AND APPLE)
-set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -lboost_locale-mt")
+set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -lboost_locale-mt  -lboost_system-mt -lboost_filesystem-mt")
 elseif(UNIX AND NOT APPLE)
 set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -lboost_locale")
 endif()

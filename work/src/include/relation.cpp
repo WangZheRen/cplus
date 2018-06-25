@@ -348,7 +348,6 @@ void Relation::output(ptree root, string L, vector<map<string, string> > v_m_P2)
                 } else {
                    url =  "https://baike.baidu.com/item/" + P2 + "/" + id;
                 }
-
                 cout << url << endl;
             }
         }

@@ -16,6 +16,7 @@
 #include <boost/property_tree/ini_parser.hpp>
 #include <boost/format.hpp>
 #include <boost/locale.hpp>
+#include <boost/filesystem.hpp>
 
 using namespace std;
 using namespace boost::property_tree;
