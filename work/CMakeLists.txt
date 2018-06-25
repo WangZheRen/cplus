@@ -34,10 +34,12 @@ endif()
 FILE(GLOB_RECURSE SOURCEFILES ${PROJECT_SOURCE_DIR}/src/include/*.cpp)
 FILE(GLOB_RECURSE TEST_SOURCEFILES ${PROJECT_SOURCE_DIR}/src/test/*.cpp)
 
-add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_DIR}/src/main/main.cpp ${SOURCEFILES})
+#add_executable(${PROJECT_NAME} ${PROJECT_SOURCE_DIR}/src/main/main.cpp ${SOURCEFILES})
+add_executable(work_relation ${PROJECT_SOURCE_DIR}/src/main/relation.cpp ${SOURCEFILES})
 add_executable(work_test ${TEST_SOURCEFILES} ${SOURCEFILES})
 
-target_link_libraries(${PROJECT_NAME} gtest curl)
+#target_link_libraries(${PROJECT_NAME} gtest curl)
+target_link_libraries(work_relation gtest curl)
 target_link_libraries(work_test gtest curl)
 
 
