@@ -25,9 +25,9 @@ set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -g -Wall")                     # 调�
 
 ADD_DEFINITIONS(-DBOOST_LOG_DYN_LINK)
 if (UNIX AND APPLE)
-set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -lboost_locale-mt  -lboost_system-mt -lboost_filesystem-mt")
+set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -lboost_locale-mt -lboost_system-mt -lboost_filesystem-mt")
 elseif(UNIX AND NOT APPLE)
-set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -lboost_locale")
+set(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS} -lboost_locale -lboost_system -lboost_filesystem")
 endif()
 
 #源码目录
