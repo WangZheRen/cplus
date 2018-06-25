@@ -15,6 +15,8 @@ namespace work{
         static wstring string2wstring(const string str);
         static string wstring2string(const wstring str);
         static string strip_tag(const string str);
+        // 字符串分割
+        static vector<string> split(const string text, const string separator);
     };
 }
 

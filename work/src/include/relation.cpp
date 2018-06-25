@@ -17,6 +17,13 @@ Relation::~Relation() {
     delete this->_http;
 }
 
+void Relation::add_id_url(string id, string url) {
+    if (this->_map_id_url.count(id) > 0) {
+        return;
+    }
+    this->_map_id_url[id] = url;
+}
+
 // 映射角色关系:关系=>逆向关系
 void Relation::init_map_family() {
     string file_path = "./data/relation/D_map_family";
@@ -38,6 +45,15 @@ void Relation::init_map_family() {
         this->_map_family[relation_name] = to_reverse_relation_name;
     }
     in.close();
+
+    in.open("./data/relation/F_map_family");
+    ASSERT_FALSE(in.fail());
+    while(getline(in, line, '\n')){
+        split(ret, line, boost::is_any_of("\t"));
+        this->_filter_map_family[ret[0]] = ret[0];
+    }
+    in.close();
+
 }
 // 初始化已有三元关系
 void Relation::init_map_cache_had_relation() {
@@ -71,33 +87,42 @@ void Relation::init_map_cache_had_relation() {
 }
 
 
-string Relation::added_id_by_kg(const string &name) {
+string Relation::added_id_by_kg(const string target, string &name) {
     ptree root;
     read_ini("conf/work.ini", root);
-    string url = root.get<string>("relationKg.url") + name;
+    string url = root.get<string>("relationKg.url") + target + name;
     string response = conv::between(this->_http->get(url), "UTF-8", "GBK");
+    string id, desc;
 
     try {
         stringstream str_stream(response);
         ptree root;
         read_json(str_stream, root);
         bool is_person_type = false; //是否是人物类词条
+        double confidence = 0.0;
         BOOST_FOREACH(ptree::value_type &v, root.get_child("egl_ret")) {
+            if (equals(v.second.get_child("mention").get_value<string>(), target)) {
+                continue;
+            }
             BOOST_FOREACH(ptree::value_type &v1, v.second.get_child("category")) {
                 if (v1.second.get_value<string>().find("人物", 0) != string::npos) {
                     is_person_type = true;
                 }
             }
             if (!is_person_type) {
-                return "";
+                continue;
             }
-            return v.second.get_child("_bdbkKgId").get_value<string>();
+
+            if (v.second.get_child("confidence").get_value<double>() > confidence ) {
+                id = v.second.get_child("_bdbkKgId").get_value<string>();
+                confidence = v.second.get_child("confidence").get_value<double>();
+            }
         }
     } catch (ptree_error &e){
         std::cout<< "error:[" << e.what() << "]url=" << url <<endl;
     }
 
-    return "";
+    return id;
 }
 
 // 单行规则提取
@@ -153,11 +178,21 @@ vector<RelationMap> Relation::regular_extract_single_line(const string &text) {
                     L = v1.second.get_child("name").get_value<string>();
                     vector<map<string, string> > v_m_P2;
                     BOOST_FOREACH(ptree::value_type &v2, v1.second.get_child("value")) {
-                            map<string, string> m_id_name;
-                            m_id_name[""] = v2.second.get_value<string>();
-                            v_m_P2.push_back(m_id_name);
+                            string value = v2.second.get_value<string>();
+                            if (value.find("、", 0) == string::npos) {
+                                map<string, string> m_id_name;
+                                m_id_name[""] = value;
+                                v_m_P2.push_back(m_id_name);
+                            } else { // 二道切割
+                                vector<string> splitVecP2 = StringUtil::split(value, "、");
+                                for (int i = 0, size = splitVecP2.size(); i < size; i++) {
+                                    map<string, string> m_id_name;
+                                    m_id_name[""] = splitVecP2[i];
+                                    v_m_P2.push_back(m_id_name);
+                                }
+                            }
                     }
-                    export_file(root, L, v_m_P2);
+                    output(root, L, v_m_P2);
                 }
             }
         }
@@ -185,7 +220,7 @@ vector<RelationMap> Relation::regular_extract_single_line(const string &text) {
                         v_m_P2.push_back(m_id_name);
                     }
                 }
-                export_file(root, L, v_m_P2);
+                output(root, L, v_m_P2);
             }
         }
 
@@ -255,15 +290,34 @@ vector<map<string, string > > extract_P2(ptree::value_type &node) {
     return ret;
 }
 
-void Relation::export_file(ptree root, string L, vector<map<string, string> > v_m_P2)
+bool Relation::is_valid_map(string P1, string L, string P2)
+{
+    if (this->_filter_map_family.count(L) > 0) {
+        wstring wP2 = StringUtil::string2wstring(P2);
+        if (wP2.length() > 2) {
+            return true;
+        }
+        wstring wP1 = StringUtil::string2wstring(P1);
+        wstring wSurnameP1, wSurnameP2;
+        wSurnameP1 = wP1.substr(0, 1);
+        wSurnameP2 = wP2.substr(0, 1);
+        return equals(wSurnameP1, wSurnameP2);
+    }
+
+    return true;
+}
+
+void Relation::output(ptree root, string L, vector<map<string, string> > v_m_P2)
 {
     try{
-        string id, key;
+        string P1 = root.get<string>("lemmaTitle");
+        string id, key, P2, url;
+        vector<string> splitVecP2;
         for (int i = 0, size = v_m_P2.size(); i < size; i++) {
             for (map<string, string>::iterator iter = v_m_P2[i].begin(); iter != v_m_P2[i].end(); iter++) {
                 id = iter->first;
                 if (id.empty() || equals(id, "null")) {
-                    id =  added_id_by_kg(iter->second);
+                    id =  added_id_by_kg(P1, iter->second);
                 }
                 if (id.empty()) {
                     continue;
@@ -276,10 +330,25 @@ void Relation::export_file(ptree root, string L, vector<map<string, string> > v_
                    this->_map_cache_had_relation[key] = key;
                 }
 
-                cout << root.get<string>("lemmaId") << "\t" << root.get<string>("lemmaTitle") << "\t";
+                if (iter->second.find("（") == string::npos) {
+                    P2 = iter->second;
+                } else {
+                    splitVecP2= StringUtil::split(iter->second, "（");
+                    P2 = splitVecP2[0];
+                }
+                // 如果命中特有关系，check下是否是合法关系
+                if (!this->is_valid_map(P1, L, P2)) {
+                    continue;
+                }
+                cout << root.get<string>("lemmaId") << "\t" << P1 << "\t";
                 cout << root.get<string>("url") << "\t" << L << "\t";
-                cout << iter->second << "\t" << id << "\t" << "\t";
-                cout << "https://baike.baidu.com/item/" << iter->second << "/" << id << endl;
+                cout << P2 << "\t" << id << "\t";
+                if (this->_map_id_url.count(id) > 0) {
+                    url = this->_map_id_url[id];
+                } else {
+                   url =  "https://baike.baidu.com/item/" + P2 + "/" + id;
+                }
+                cout << url << endl;
             }
         }
     } catch (exception &e) {
@@ -306,15 +375,15 @@ vector<RelationMap> Relation::regular_extract_wrap(const string &text) {
                if (!L.empty()) {
                    v_m_P2 = extract_P2(v);
                    if (v_m_P2.size() > 0) {
-                       export_file(root, L, v_m_P2);
+                       output(root, L, v_m_P2);
                    }
                }
            }
         }
     } catch(ptree_error & e) {
-        std::cout<< "regular_extract_wrap()" << e.what() <<endl;
+        std::cout << "regular_extract_wrap()" << e.what() << "\ttext=" << text <<endl;
     } catch(runtime_error& e) {
-        std::cout<< "regular_extract_wrap()" << e.what() <<endl;
+        std::cout << "regular_extract_wrap()" << e.what() << "\ttext=" << text <<endl;
     }
     return ret;
 }

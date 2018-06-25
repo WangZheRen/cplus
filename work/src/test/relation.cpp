@@ -36,17 +36,34 @@ TEST(relation, regular_extract)
     string s_train = "./data/relation/T_train";
     ifstream in(s_train.c_str());
     ASSERT_FALSE(in.fail());
-    string line;
+    string line, url, id;
+    ptree root;
 
     Relation relation;
-    vector<RelationMap> vecRelation;
+    // 先初始化id和url的映射关系
     while(getline(in, line, '\n')){
         if (line.empty()){
             continue;
         }
-        vecRelation = relation.regular_extract_single_line(line);
-        vecRelation = relation.regular_extract_wrap(line);
-        break;
+        try {
+            stringstream str_stream(line);
+            read_json(str_stream, root);
+            id = root.get_child("lemmaId").get_value<string>();
+            url = root.get_child("url").get_value<string>();
+            relation.add_id_url(id, url);
+        } catch(ptree_error & e) {
+        }
     }
+    in.clear();
+    in.seekg(0, ios::beg);
+
+    while(getline(in, line, '\n')){
+        if (line.empty()){
+            continue;
+        }
+        relation.regular_extract_single_line(line);
+        relation.regular_extract_wrap(line);
+    }
+    in.close();
 
 }

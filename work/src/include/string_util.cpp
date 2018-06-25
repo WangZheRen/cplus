@@ -42,3 +42,19 @@ string StringUtil::strip_tag(const string str)
     regex rgx("<[a-zA-Z/]*>");
     return regex_replace(str, rgx, "");
 }
+
+vector<string> StringUtil::split(const string input, string separator)
+{
+    vector<string> ret;
+    vector< wstring > splitVec;
+    wstring winput = string2wstring(input);
+    wstring wseparator = StringUtil::string2wstring(separator);
+    boost::split(splitVec, winput, boost::is_any_of(wseparator));
+    int size = splitVec.size();
+    if ( size > 0) {
+        for (int i = 0; i < size;i++) {
+            ret.push_back(wstring2string(splitVec[i]));
+        }
+    }
+    return ret;
+}
