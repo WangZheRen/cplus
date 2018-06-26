@@ -127,7 +127,7 @@ string Relation::added_id_by_kg(const string target, const string name) {
 
 string filterSpecial(const string text, const string startMark, const string endMark)
 {
-    int start, end, length;
+    size_t start, end, length;
     string ret;
     if ((start = text.find(startMark)) != string::npos) {
         if ((end = text.find(endMark)) != string::npos) {
