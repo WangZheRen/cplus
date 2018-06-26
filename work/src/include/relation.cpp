@@ -4,7 +4,6 @@
 
 #include "relation.h"
 #include <gtest/gtest.h>
-#include <boost/algorithm/string/replace.hpp>
 
 using namespace work;
 
@@ -102,7 +101,7 @@ string Relation::added_id_by_kg(const string target, const string name) {
         bool is_person_type = false; //是否是人物类词条
         double confidence = 0.0;
         BOOST_FOREACH(ptree::value_type &v, root.get_child("egl_ret")) {
-            if (equals(v.second.get_child("mention").get_value<string>(), target)) {
+            if (!equals(v.second.get_child("mention").get_value<string>(), name)) {
                 continue;
             }
             BOOST_FOREACH(ptree::value_type &v1, v.second.get_child("category")) {
@@ -126,18 +125,45 @@ string Relation::added_id_by_kg(const string target, const string name) {
     return id;
 }
 
+string filterSpecial(const string text, const string startMark, const string endMark)
+{
+    int start, end, length;
+    string ret;
+    if ((start = text.find(startMark)) != string::npos) {
+        if ((end = text.find(endMark)) != string::npos) {
+            if (start != 0) {
+                ret = text.substr(0, start);
+            }
+
+            end = end + endMark.length();
+            length = text.length() - end;
+            ret += text.substr(end, length);
+        }
+    }
+    return ret;
+}
+
 void Relation::output(ptree root, string L, vector<map<string, string> > v_m_P2)
 {
     try{
         string P1 = root.get<string>("lemmaTitle");
         string id, key, P2, url;
         vector<string> splitVecP2;
-        regex reg("（[^）]+）");
+        //boost::regex reg("\uff08[^\uff09)]+\uff09");
         for (int i = 0, size = v_m_P2.size(); i < size; i++) {
             for (map<string, string>::iterator iter = v_m_P2[i].begin(); iter != v_m_P2[i].end(); iter++) {
+                if (iter->second.find("（") == string::npos) {
+                    P2 = iter->second;
+                } else {
+                    P2 = filterSpecial(iter->second, "\uff08", "\uff09");
+                }
+                if (P2.empty()) {
+                    continue;
+                }
+
                 id = iter->first;
                 if (id.empty() || equals(id, "null")) {
-                    id =  added_id_by_kg(P1, iter->second);
+                    id =  added_id_by_kg(P1, P2);
                 }
                 if (id.empty()) {
                     continue;
@@ -150,16 +176,7 @@ void Relation::output(ptree root, string L, vector<map<string, string> > v_m_P2)
                    this->_map_cache_had_relation[key] = key;
                 }
 
-                if (iter->second.find("（") == string::npos) {
-                    P2 = iter->second;
-                } else {
-                    //splitVecP2= StringUtil::split(iter->second, "（");
-                    //P2 = splitVecP2[0];
-                    P2 = regex_replace(iter->second, reg, "");
-                }
-                if (P2.empty()) {
-                    continue;
-                }
+
                 // 如果命中特有关系，check下是否是合法关系
                 if (!this->is_valid_map(P1, L, P2)) {
                     continue;
