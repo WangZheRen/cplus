@@ -24,6 +24,9 @@ namespace work{
     inline string _S(const wstring wstr){
         return StringUtil::wstring2string(wstr);
     }
+    inline vector<string> _T(const string text, const string separator){
+        return StringUtil::split(text, separator);
+    }
 }
 
 
