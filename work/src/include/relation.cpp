@@ -153,9 +153,9 @@ void Relation::output(ptree root, string L, vector<map<string, string> > v_m_P2)
                 } else {
                     splitVecP2= StringUtil::split(iter->second, "（");
                     P2 = splitVecP2[0];
-                    if (P2.empty()) {
-                        continue;
-                    }
+                }
+                if (P2.empty()) {
+                    continue;
                 }
                 // 如果命中特有关系，check下是否是合法关系
                 if (!this->is_valid_map(P1, L, P2)) {
