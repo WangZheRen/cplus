@@ -4,6 +4,7 @@
 
 #include "relation.h"
 #include <gtest/gtest.h>
+#include <boost/algorithm/string/replace.hpp>
 
 using namespace work;
 
@@ -131,6 +132,7 @@ void Relation::output(ptree root, string L, vector<map<string, string> > v_m_P2)
         string P1 = root.get<string>("lemmaTitle");
         string id, key, P2, url;
         vector<string> splitVecP2;
+        regex reg("（[^）]+）");
         for (int i = 0, size = v_m_P2.size(); i < size; i++) {
             for (map<string, string>::iterator iter = v_m_P2[i].begin(); iter != v_m_P2[i].end(); iter++) {
                 id = iter->first;
@@ -151,8 +153,9 @@ void Relation::output(ptree root, string L, vector<map<string, string> > v_m_P2)
                 if (iter->second.find("（") == string::npos) {
                     P2 = iter->second;
                 } else {
-                    splitVecP2= StringUtil::split(iter->second, "（");
-                    P2 = splitVecP2[0];
+                    //splitVecP2= StringUtil::split(iter->second, "（");
+                    //P2 = splitVecP2[0];
+                    P2 = regex_replace(iter->second, reg, "");
                 }
                 if (P2.empty()) {
                     continue;
@@ -187,7 +190,7 @@ string Relation::extract_single_L(ptree::value_type &node) {
 
     // 遍历数组中的元素
     vector< wstring > splitVec;
-    wstring sep = StringUtil::string2wstring("：");
+    wstring sep = _W("：");
     string text;
     unsigned int i = 0;
     BOOST_FOREACH (ptree::value_type& v, node.second.get_child("content")) {
@@ -201,7 +204,7 @@ string Relation::extract_single_L(ptree::value_type &node) {
                 break;
             }
             text = StringUtil::strip_tag(v.second.get_child("text").get_value<string>());
-            wstring line = StringUtil::string2wstring(text);
+            wstring line = _W(text);
             boost::split(splitVec, line, boost::is_any_of(sep));
             if (splitVec.size() > 1) {
                 L = StringUtil::wstring2string(splitVec[0]);
@@ -345,11 +348,11 @@ vector<map<string, string > > extract_P2(ptree::value_type &node) {
 bool Relation::is_valid_map(string P1, string L, string P2)
 {
     if (this->_filter_map_family.count(L) > 0) {
-        wstring wP2 = StringUtil::string2wstring(P2);
+        wstring wP2 = _W(P2);
         if (wP2.length() > 2) {
             return true;
         }
-        wstring wP1 = StringUtil::string2wstring(P1);
+        wstring wP1 = _W(P1);
         wstring wSurnameP1, wSurnameP2;
         wSurnameP1 = wP1.substr(0, 1);
         wSurnameP2 = wP2.substr(0, 1);

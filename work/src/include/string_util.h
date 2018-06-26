@@ -18,6 +18,12 @@ namespace work{
         // 字符串分割
         static vector<string> split(const string text, const string separator);
     };
+    inline wstring _W(const string str){
+        return StringUtil::string2wstring(str);
+    }
+    inline string _S(const wstring wstr){
+        return StringUtil::wstring2string(wstr);
+    }
 }
 
 
