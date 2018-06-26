@@ -28,7 +28,7 @@ string Http::get(string url, unsigned int retries)
     string response;
     CURL *curl;
     struct curl_slist *headers = NULL;
-    //headers = curl_slist_append(headers, "Accept: Agent-007");
+    //headers = curl_slist_append(headers, "Content-Type: text/plain; charset=utf-8");
 
     curl = curl_easy_init() ;
     if (curl) {

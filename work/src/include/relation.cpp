@@ -87,7 +87,7 @@ void Relation::init_map_cache_had_relation() {
 }
 
 
-string Relation::added_id_by_kg(const string target, string &name) {
+string Relation::added_id_by_kg(const string target, const string name) {
     ptree root;
     read_ini("conf/work.ini", root);
     string url = root.get<string>("relationKg.url") + target + name;
@@ -123,6 +123,58 @@ string Relation::added_id_by_kg(const string target, string &name) {
     }
 
     return id;
+}
+
+void Relation::output(ptree root, string L, vector<map<string, string> > v_m_P2)
+{
+    try{
+        string P1 = root.get<string>("lemmaTitle");
+        string id, key, P2, url;
+        vector<string> splitVecP2;
+        for (int i = 0, size = v_m_P2.size(); i < size; i++) {
+            for (map<string, string>::iterator iter = v_m_P2[i].begin(); iter != v_m_P2[i].end(); iter++) {
+                id = iter->first;
+                if (id.empty() || equals(id, "null")) {
+                    id =  added_id_by_kg(P1, iter->second);
+                }
+                if (id.empty()) {
+                    continue;
+                }
+                // 已有的关系就不做导出
+                key = root.get<string>("lemmaId") + "_" + id;
+                if (this->_map_cache_had_relation.count(key) > 0) {
+                    continue;
+                } else {
+                   this->_map_cache_had_relation[key] = key;
+                }
+
+                if (iter->second.find("（") == string::npos) {
+                    P2 = iter->second;
+                } else {
+                    splitVecP2= StringUtil::split(iter->second, "（");
+                    P2 = splitVecP2[0];
+                    if (P2.empty()) {
+                        continue;
+                    }
+                }
+                // 如果命中特有关系，check下是否是合法关系
+                if (!this->is_valid_map(P1, L, P2)) {
+                    continue;
+                }
+                cout << root.get<string>("lemmaId") << "\t" << P1 << "\t";
+                cout << root.get<string>("url") << "\t" << L << "\t";
+                cout << P2 << "\t" << id << "\t";
+                if (this->_map_id_url.count(id) > 0) {
+                    url = this->_map_id_url[id];
+                } else {
+                   url =  "https://baike.baidu.com/item/" + P2 + "/" + id;
+                }
+                cout << url << endl;
+            }
+        }
+    } catch (exception &e) {
+        cout << e.what() << endl;
+    }
 }
 
 // 单行规则提取
@@ -307,54 +359,6 @@ bool Relation::is_valid_map(string P1, string L, string P2)
     return true;
 }
 
-void Relation::output(ptree root, string L, vector<map<string, string> > v_m_P2)
-{
-    try{
-        string P1 = root.get<string>("lemmaTitle");
-        string id, key, P2, url;
-        vector<string> splitVecP2;
-        for (int i = 0, size = v_m_P2.size(); i < size; i++) {
-            for (map<string, string>::iterator iter = v_m_P2[i].begin(); iter != v_m_P2[i].end(); iter++) {
-                id = iter->first;
-                if (id.empty() || equals(id, "null")) {
-                    id =  added_id_by_kg(P1, iter->second);
-                }
-                if (id.empty()) {
-                    continue;
-                }
-                // 已有的关系就不做导出
-                key = root.get<string>("lemmaId") + "_" + id;
-                if (this->_map_cache_had_relation.count(key) > 0) {
-                    continue;
-                } else {
-                   this->_map_cache_had_relation[key] = key;
-                }
-
-                if (iter->second.find("（") == string::npos) {
-                    P2 = iter->second;
-                } else {
-                    splitVecP2= StringUtil::split(iter->second, "（");
-                    P2 = splitVecP2[0];
-                }
-                // 如果命中特有关系，check下是否是合法关系
-                if (!this->is_valid_map(P1, L, P2)) {
-                    continue;
-                }
-                cout << root.get<string>("lemmaId") << "\t" << P1 << "\t";
-                cout << root.get<string>("url") << "\t" << L << "\t";
-                cout << P2 << "\t" << id << "\t";
-                if (this->_map_id_url.count(id) > 0) {
-                    url = this->_map_id_url[id];
-                } else {
-                   url =  "https://baike.baidu.com/item/" + P2 + "/" + id;
-                }
-                cout << url << endl;
-            }
-        }
-    } catch (exception &e) {
-        cout << e.what() << endl;
-    }
-}
 
 vector<RelationMap> Relation::regular_extract_wrap(const string &text) {
     vector<RelationMap> ret;

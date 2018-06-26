@@ -30,7 +30,7 @@ namespace work {
         void add_id_url(string id, string url);
 
         // 补充词条ID数据（通过KG接口)
-        string added_id_by_kg(const string target, string &name);
+        string added_id_by_kg(const string target, const string name);
 
         // 规则提取-单行
         string extract_single_L(ptree::value_type &node);
