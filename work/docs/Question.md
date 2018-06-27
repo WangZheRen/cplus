@@ -1,6 +1,6 @@
 # boost split can not split Chinese sentence #
 
-```
+```C++ { .theme-legacy }
 std::regex regex("，|。|！|？");
 std::string src = "使用boost split失败了，不知道什么原因。有人可以告诉我吗？谢谢！";
 
@@ -32,7 +32,7 @@ Cannot find a C++ compiler supporting C++11 on this system.
 </pre>
 
 # error:怎样让CMake 编译器使用gcc代替Clang? #
-```
+```C++ { .theme-legacy }
 set(CMAKE_C_COMPILER "gcc") # 显示指定使用的C编译器
 set(CMAKE_CXX_COMPILER "g++")# 显示指定使用的C++编译器
 ```
@@ -44,7 +44,7 @@ gcc需要安装4.9以上版本
 
 # CMakeLists.txt区分mac #
 
-```
+```C++ { .theme-legacy }
 if (UNIX AND NOT APPLE)
     message(STATUS "ENTRY LINUX")
 elseif(UNIX AND APPLE)
