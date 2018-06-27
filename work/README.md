@@ -2,4 +2,5 @@
   * [新人学习](docs/Study.md) -- 环境初始化方式
   * [问题集合](docs/Question.md) -- 日常问题处理过程
   * [人物关系挖掘](docs/Relation.md) -- 人物关系挖掘开发文档
+  * [数据结构与算法](docs/algorithm/Home.md) -- 常用算法汇总
   
