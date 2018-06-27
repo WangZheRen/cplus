@@ -19,3 +19,5 @@ INSERTION-SORT(A)
         A[i + 1] = key;
 
 ```
+_下标_: 从1开始
+
