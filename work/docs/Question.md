@@ -1,3 +1,8 @@
+# 按照第三列逆序输出文件，分隔符为\t #
+
+```C++ { .theme-legacy }
+sort -k 3 -n -r -t$'\t' t.txt
+```
 # boost split can not split Chinese sentence #
 
 ```C++ { .theme-legacy }
